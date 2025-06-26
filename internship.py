@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import joblib
 
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
@@ -61,6 +62,35 @@ feat_imp = pd.Series(importances, index=X.columns).sort_values(ascending=False)
 fig, ax = plt.subplots(figsize=(4, 2))
 sns.barplot(x=feat_imp, y=feat_imp.index, ax=ax)
 st.pyplot(fig)
+
+
+# Predict pollutant levels for a specific station and year
+station_id = '22'  # change as needed
+year_input = 2024  # change as needed
+
+input_data = pd.DataFrame({'year': [year_input], 'id': [station_id]})
+input_encoded = pd.get_dummies(input_data, columns=['id'])
+
+# Align with training feature columns
+missing_cols = set(X.columns) - set(input_encoded.columns)
+for col in missing_cols:
+    input_encoded[col] = 0
+input_encoded = input_encoded[X.columns]  # ensure column order
+
+# Predict pollutants
+predicted_pollutants = model.predict(input_encoded)[0]
+
+# Show predicted results
+print(f"\nPredicted pollutant levels for station '{station_id}' in {year_input}:")
+for p, val in zip(targets, predicted_pollutants):
+    st.write(f"  {p}: {val:.2f}")
+
+
+# Save model and column structure
+joblib.dump(model, 'pollution_model.pkl')
+joblib.dump(X.columns.tolist(), 'model_columns.pkl')
+print('\nModel and column structure saved successfully!')
+
 
 # Custom Prediction Input
 st.subheader("🧪 Predict Water Quality From Custom Input")
